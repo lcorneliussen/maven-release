@@ -69,7 +69,16 @@ public class ScmCommitPhase
         ReleaseResult relResult = new ReleaseResult();
 
         validateConfiguration( releaseDescriptor );
+        
+        if (releaseDescriptor.isBranchCreation() 
+        		&& !releaseDescriptor.isUpdateWorkingCopyVersions())
+        {
+        	getLogger().info( "Modified POMs are not committed because updateWorkingCopyVersions is set to false." );
+        	relResult.setResultCode( ReleaseResult.SUCCESS );
 
+            return relResult;
+        }
+        
         getLogger().info( "Checking in modified POMs..." );
 
         ScmRepository repository;
@@ -146,12 +155,18 @@ public class ScmCommitPhase
         ReleaseResult result = new ReleaseResult();
 
         validateConfiguration( releaseDescriptor );
-
-        Collection pomFiles = createPomFiles( releaseDescriptor, reactorProjects );
-        logInfo( result, "Full run would be checking in " + pomFiles.size() + " files with message: '" +
-            createMessage( releaseDescriptor ) + "'" );
-
-        result.setResultCode( ReleaseResult.SUCCESS );
+        
+        if (releaseDescriptor.isBranchCreation() 
+        		&& !releaseDescriptor.isUpdateWorkingCopyVersions()){
+        	getLogger().info( "Full run would not checkin changes, because updateWorkingCopyVersions is set to false." );
+        }
+        else{
+	        Collection pomFiles = createPomFiles( releaseDescriptor, reactorProjects );
+	        logInfo( result, "Full run would be checking in " + pomFiles.size() + " files with message: '" +
+	            createMessage( releaseDescriptor ) + "'" );
+	
+	        result.setResultCode( ReleaseResult.SUCCESS );
+        }
 
         return result;
     }
@@ -162,6 +177,14 @@ public class ScmCommitPhase
         if ( releaseDescriptor.getScmReleaseLabel() == null )
         {
             throw new ReleaseFailureException( "A release label is required for committing" );
+        }
+        
+        if (releaseDescriptor.isBranchCreation())
+        {
+        	if (!releaseDescriptor.isUpdateWorkingCopyVersions() && releaseDescriptor.isRemoteTagging())
+        	{
+        		throw new ReleaseFailureException( "Cannot perform a remote tag/branch without changing the working copy." );
+        	}
         }
     }
 
