@@ -262,7 +262,8 @@ public class MapVersionsPhaseTest
         MapVersionsPhase phase = (MapVersionsPhase) lookup( ReleasePhase.ROLE, "test-map-development-versions" );
 
         Mock mockPrompter = new Mock( Prompter.class );
-        mockPrompter.expects( new InvokeOnceMatcher() ).method( "prompt" ).with( new IsAnything(), new IsNull() ).will(
+        mockPrompter.expects( new InvokeOnceMatcher() ).method( "prompt" ).with( new IsAnything(),
+                                                                                 new IsEqual( "1.1-SNAPSHOT" ) ).will(
             new ReturnStub( "2.0-SNAPSHOT" ) );
         phase.setPrompter( (Prompter) mockPrompter.proxy() );
 
@@ -276,7 +277,8 @@ public class MapVersionsPhaseTest
                       releaseDescriptor.getDevelopmentVersions() );
 
         mockPrompter.reset();
-        mockPrompter.expects( new InvokeOnceMatcher() ).method( "prompt" ).with( new IsAnything(), new IsNull() ).will(
+        mockPrompter.expects( new InvokeOnceMatcher() ).method( "prompt" ).with( new IsAnything(),
+                                                                                 new IsEqual( "1.1-SNAPSHOT" ) ).will(
             new ReturnStub( "2.0-SNAPSHOT" ) );
 
         releaseDescriptor = new ReleaseDescriptor();
