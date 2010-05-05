@@ -27,6 +27,8 @@ import org.apache.maven.shared.release.ReleaseFailureException;
 import org.apache.maven.shared.release.config.ReleaseDescriptor;
 import org.apache.maven.shared.release.config.ReleaseUtils;
 
+import java.util.Arrays;
+
 /**
  * Prepare for a release in SCM.
  * For more info see <a href="/plugins/maven-release-plugin/examples/prepare-release.html">this example</a>.
@@ -132,6 +134,27 @@ public class PrepareReleaseMojo
      */
     private boolean allowReleasePluginSnapshot;
 
+     /**
+     * Additional files that will skipped when checking for
+     * modifications on the working copy.
+     *
+     * Is ignored, when checkModificationExcludes is set.
+     *
+     *
+     * @parameter
+     * @since 2.1
+     */
+    private String[] checkModificationExcludes;
+
+    /**
+     * Command-line version of checkModificationExcludes
+     *
+     *
+     * @parameter expression="${checkModificationExcludeList}"
+     * @since 2.1
+     */
+    private String checkModificationExcludeList;
+
     /**
      * Default version to use when preparing a release or a branch.
      *
@@ -200,6 +223,16 @@ public class PrepareReleaseMojo
         config.setDefaultReleaseVersion( releaseVersion );
         config.setDefaultDevelopmentVersion( developmentVersion );
         config.setRemoteTagging( remoteTagging );
+
+        if (checkModificationExcludeList != null) {
+           checkModificationExcludes = checkModificationExcludeList
+                   .replaceAll("\\s", "")
+                   .split(",");
+        }
+
+        if (checkModificationExcludes != null) {
+            config.setCheckModificationExcludes( Arrays.asList( checkModificationExcludes ) );
+        }
 
         // Create a config containing values from the session properties (ie command line properties with cli).
         ReleaseDescriptor sysPropertiesConfig

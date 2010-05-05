@@ -19,11 +19,14 @@ package org.apache.maven.plugins.release;
  * under the License.
  */
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.shared.release.ReleaseExecutionException;
 import org.apache.maven.shared.release.ReleaseFailureException;
 import org.apache.maven.shared.release.config.ReleaseDescriptor;
+
+import java.util.Arrays;
 
 /**
  * Branch a project in SCM.
@@ -135,6 +138,27 @@ public class BranchReleaseMojo
      */
     private boolean remoteTagging;
 
+     /**
+     * Additional files that will skipped when checking for
+     * modifications on the working copy.
+     *
+     * Is ignored, when checkModificationExcludes is set.
+     *
+     *
+     * @parameter
+     * @since 2.1
+     */
+    private String[] checkModificationExcludes;
+
+    /**
+     * Command-line version of checkModificationExcludes
+     *
+     *
+     * @parameter expression="${checkModificationExcludeList}"
+     * @since 2.1
+     */
+    private String checkModificationExcludeList;
+
     /**
      * Default version to use when preparing a release or a branch.
      *
@@ -173,6 +197,17 @@ public class BranchReleaseMojo
         config.setRemoteTagging( remoteTagging );
         config.setDefaultReleaseVersion( releaseVersion );
         config.setDefaultDevelopmentVersion( developmentVersion );
+
+        if (checkModificationExcludeList != null) {
+           checkModificationExcludes = checkModificationExcludeList
+                   .replaceAll("\\s", "")
+                   .split(",");
+        }
+
+        if (checkModificationExcludes != null) {
+            config.setCheckModificationExcludes( Arrays.asList( checkModificationExcludes ) );
+        }
+        
         try
         {
             releaseManager.branch( config, getReleaseEnvironment(), reactorProjects, dryRun );
