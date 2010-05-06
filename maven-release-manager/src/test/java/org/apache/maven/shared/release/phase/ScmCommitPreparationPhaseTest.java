@@ -55,11 +55,11 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Test the SCM commit phase.
+ * Test the release or branch preparation SCM commit phase.
  *
  * @author <a href="mailto:brett@apache.org">Brett Porter</a>
  */
-public class ScmCommitPhaseTest
+public class ScmCommitPreparationPhaseTest
     extends AbstractReleaseTestCase
 {
     private static final String PREFIX = "[maven-release-manager] prepare release ";
@@ -72,6 +72,16 @@ public class ScmCommitPhaseTest
         super.setUp();
 
         phase = (ReleasePhase) lookup( ReleasePhase.ROLE, "scm-commit-release" );
+    }
+
+    public void testIsCorrectImplementation() {
+        assertEquals(ScmCommitPreparationPhase.class, phase.getClass());
+    }
+
+    public void testResolvesCorrectBranchImplementation()
+        throws Exception
+    {
+        assertEquals(ScmCommitPreparationPhase.class, lookup( ReleasePhase.ROLE, "scm-commit-branch" ).getClass());
     }
 
     public void testCommit()
@@ -218,11 +228,7 @@ public class ScmCommitPhaseTest
         descriptor.setWorkingDirectory( rootProject.getFile().getParentFile().getAbsolutePath() );
         descriptor.setScmReleaseLabel( "release-label" );
 
-        Mock scmProviderMock = new Mock( ScmProvider.class );
-        scmProviderMock.expects( new TestFailureMatcher( "Shouldn't have called checkIn" ) ).method( "checkIn" );
-
-        ScmManagerStub stub = (ScmManagerStub) lookup( ScmManager.ROLE );
-        stub.setScmProvider( (ScmProvider) scmProviderMock.proxy() );
+        validateNoCheckin();
 
         phase.simulate( descriptor, new DefaultReleaseEnvironment(), reactorProjects );
 
@@ -349,6 +355,55 @@ public class ScmCommitPhaseTest
         }
     }
 
+    public void testSuppressCommitWithRemoteTaggingFails()
+        throws Exception
+    {
+        ReleaseDescriptor descriptor = createReleaseDescriptor();
+        List reactorProjects = createReactorProjects();
+
+        descriptor.setRemoteTagging(true);
+        descriptor.setSuppressCommitBeforeTagOrBranch(true);
+
+        validateNoCheckin();
+
+        try {
+            phase.execute( descriptor, new DefaultReleaseEnvironment(), reactorProjects );
+
+            fail( "Commit should have failed with ReleaseFailureException" );
+        }
+        catch ( ReleaseFailureException e )
+        {
+            assertNull( "check no other cause", e.getCause() );
+        }
+
+        assertTrue( true );
+    }
+
+    public void testSuppressCommitAfterBranch()
+        throws Exception
+    {
+        ReleaseDescriptor descriptor = createReleaseDescriptor();
+        List reactorProjects = createReactorProjects();
+
+        descriptor.setBranchCreation(true);
+        descriptor.setRemoteTagging(false);
+        descriptor.setSuppressCommitBeforeTagOrBranch(true);
+
+        validateNoCheckin();
+
+        phase.execute( descriptor, new DefaultReleaseEnvironment(), reactorProjects );
+
+        assertTrue( true );
+    }
+
+    private void validateNoCheckin() throws Exception {
+        Mock scmProviderMock = new Mock( ScmProvider.class );
+        scmProviderMock.expects( new TestFailureMatcher( "Shouldn't have called checkIn" ) ).method( "checkIn" );
+
+        ScmManagerStub stub = (ScmManagerStub) lookup( ScmManager.ROLE );
+        stub.setScmProvider( (ScmProvider) scmProviderMock.proxy() );
+    }
+
     private List createReactorProjects()
         throws Exception
     {
@@ -364,4 +419,5 @@ public class ScmCommitPhaseTest
         return descriptor;
     }
 
+    
 }
