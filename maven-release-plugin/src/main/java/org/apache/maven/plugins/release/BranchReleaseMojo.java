@@ -19,7 +19,6 @@ package org.apache.maven.plugins.release;
  * under the License.
  */
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.shared.release.ReleaseExecutionException;
@@ -75,6 +74,21 @@ public class BranchReleaseMojo
      * @since 2.0-beta-6
      */
     private boolean updateWorkingCopyVersions;
+
+    /**
+     * Whether to suppress a commit of changes to the working copy
+     * before the tag is created.
+     * <br/>
+     * <br/>This requires <code>remoteTagging</code> to be set to false.
+     * <br/>
+     * <br/><code>suppressCommitBeforeBranch</code> is useful when you want
+     * to avoid poms with released versions in all revisions of your
+     * trunk or development branch.
+     *
+     * @parameter expression="${suppressCommitBeforeBranch}" default-value="false"
+     * @since 2.1
+     */
+    private boolean suppressCommitBeforeBranch;
 
     /**
      * Whether to update versions to SNAPSHOT in the branch.
@@ -197,6 +211,8 @@ public class BranchReleaseMojo
         config.setRemoteTagging( remoteTagging );
         config.setDefaultReleaseVersion( releaseVersion );
         config.setDefaultDevelopmentVersion( developmentVersion );
+
+        config.setSuppressCommitBeforeTagOrBranch(suppressCommitBeforeBranch );
 
         if (checkModificationExcludeList != null) {
            checkModificationExcludes = checkModificationExcludeList

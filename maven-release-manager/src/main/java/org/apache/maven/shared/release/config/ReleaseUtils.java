@@ -83,6 +83,7 @@ public class ReleaseUtils
         mergeInto.setBranchCreation( toBeMerged.isBranchCreation() );
         mergeInto.setUpdateBranchVersions( toBeMerged.isUpdateBranchVersions() );
         mergeInto.setUpdateWorkingCopyVersions( toBeMerged.isUpdateWorkingCopyVersions() );
+        mergeInto.setSuppressCommitBeforeTagOrBranch( toBeMerged.isSuppressCommitBeforeTagOrBranch() );
         mergeInto.setUpdateVersionsToSnapshot( toBeMerged.isUpdateVersionsToSnapshot() );
         mergeInto.setAllowTimestampedSnapshots( toBeMerged.isAllowTimestampedSnapshots() );
         mergeInto.setSnapshotReleasePluginAllowed( toBeMerged.isSnapshotReleasePluginAllowed() );
