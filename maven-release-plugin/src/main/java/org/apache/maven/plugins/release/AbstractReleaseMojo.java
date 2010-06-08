@@ -19,11 +19,6 @@ package org.apache.maven.plugins.release;
  * under the License.
  */
 
-import java.io.File;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.maven.model.Profile;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -36,6 +31,12 @@ import org.apache.maven.shared.release.config.ReleaseDescriptor;
 import org.apache.maven.shared.release.env.DefaultReleaseEnvironment;
 import org.apache.maven.shared.release.env.ReleaseEnvironment;
 import org.codehaus.plexus.util.StringUtils;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Base class with shared configuration.
@@ -175,17 +176,18 @@ public abstract class AbstractReleaseMojo
      * Use a local checkout instead of doing a checkout from the upstream repository.
      * ATTENTION: This will only work with distributed SCMs which support the file:// protocol
      * like e.g. git, jgit or hg!
-     *
+     * <p/>
      * TODO: we should think about having the defaults for the various SCM providers provided via modello!
      *
      * @parameter expression="${localCheckout}" default-value="false"
      * @since 2.0
      */
     private boolean localCheckout;
-    
+
     /**
      * Implemented with git will or not push changes to the upstream repository.
      * <code>true</code> by default to preserve backward compatibility.
+     *
      * @parameter expression="${pushChanges}" default-value="true"
      * @since 2.1
      */
@@ -206,11 +208,8 @@ public abstract class AbstractReleaseMojo
      */
     protected ReleaseEnvironment getReleaseEnvironment()
     {
-        return new DefaultReleaseEnvironment().setSettings( settings )
-                                              .setJavaHome( javaHome )
-                                              .setMavenHome( mavenHome )
-                                              .setLocalRepositoryDirectory( localRepoDirectory )
-                                              .setMavenExecutorId( mavenExecutorId );
+        return new DefaultReleaseEnvironment().setSettings( settings ).setJavaHome( javaHome ).setMavenHome(
+            mavenHome ).setLocalRepositoryDirectory( localRepoDirectory ).setMavenExecutorId( mavenExecutorId );
     }
 
     /**
@@ -225,8 +224,9 @@ public abstract class AbstractReleaseMojo
             {
                 String providerType = (String) i.next();
                 String providerImplementation = (String) providerImplementations.get( providerType );
-                getLog().info( "Change the default '" + providerType + "' provider implementation to '"
-                    + providerImplementation + "'." );
+                getLog().info(
+                    "Change the default '" + providerType + "' provider implementation to '" + providerImplementation +
+                        "'." );
                 scmManager.setScmProviderImplementation( providerType, providerImplementation );
             }
         }
@@ -254,13 +254,15 @@ public abstract class AbstractReleaseMojo
         descriptor.setPomFileName( pomFileName );
 
         descriptor.setLocalCheckout( localCheckout );
-        
+
         descriptor.setPushChanges( pushChanges );
 
-        List profiles = project.getActiveProfiles();
+        List profilesIds = collectProfiles();
 
         String arguments = this.arguments;
-        if ( profiles != null && !profiles.isEmpty() )
+        String additionalProfiles = getAdditionalProfiles();
+
+        if ( !profilesIds.isEmpty() || additionalProfiles != null)
         {
             if ( !StringUtils.isEmpty( arguments ) )
             {
@@ -271,30 +273,56 @@ public abstract class AbstractReleaseMojo
                 arguments = "-P ";
             }
 
-            for ( Iterator it = profiles.iterator(); it.hasNext(); )
+            for ( Iterator it = profilesIds.iterator(); it.hasNext(); )
             {
-                Profile profile = (Profile) it.next();
-
-                arguments += profile.getId();
+                arguments += (String) it.next();
                 if ( it.hasNext() )
                 {
                     arguments += ",";
                 }
             }
 
-            String additionalProfiles = getAdditionalProfiles();
             if ( additionalProfiles != null )
             {
-                if ( !profiles.isEmpty() )
+                if ( !profilesIds.isEmpty() )
                 {
                     arguments += ",";
                 }
                 arguments += additionalProfiles;
             }
         }
+
         descriptor.setAdditionalArguments( arguments );
 
         return descriptor;
+    }
+
+    /**
+     * Collects all active profile from the current and it's parent poms.
+     *
+     * @return profiles to be enabled
+     */
+    private List collectProfiles()
+    {
+        List profiles = new ArrayList();
+        MavenProject current = project;
+        while ( current != null )
+        {
+            List currentProfiles = current.getActiveProfiles();
+            if ( currentProfiles != null )
+            {
+                for ( Iterator it = currentProfiles.iterator(); it.hasNext(); )
+                {
+                    String id = ( (Profile) it.next() ).getId();
+                    if ( !profiles.contains( id ) )
+                    {
+                        profiles.add( id );
+                    }
+                }
+            }
+            current = current.getParent();
+        }
+        return profiles;
     }
 
     /**
@@ -302,6 +330,7 @@ public abstract class AbstractReleaseMojo
      *
      * @return additional profiles to enable during release
      */
+
     protected String getAdditionalProfiles()
     {
         return null;
