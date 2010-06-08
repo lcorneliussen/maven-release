@@ -20,6 +20,7 @@ package org.apache.maven.plugins.release;
  */
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -183,7 +184,7 @@ public abstract class AbstractReleaseMojo
      * @since 2.0
      */
     private boolean localCheckout;
-    
+
     /**
      * Implemented with git will or not push changes to the upstream repository.
      * <code>true</code> by default to preserve backward compatibility.
@@ -208,7 +209,7 @@ public abstract class AbstractReleaseMojo
     protected MavenSession session;
 
 
-    /**
+/**
      * Gets the enviroment settings configured for this release.
      *
      * @return The release environment, never <code>null</code>.
@@ -263,13 +264,15 @@ public abstract class AbstractReleaseMojo
         descriptor.setPomFileName( pomFileName );
 
         descriptor.setLocalCheckout( localCheckout );
-        
+
         descriptor.setPushChanges( pushChanges );
 
-        List profiles = project.getActiveProfiles();
+        List profilesIds = collectProfiles();
 
         String arguments = this.arguments;
-        if ( profiles != null && !profiles.isEmpty() )
+        String additionalProfiles = getAdditionalProfiles();
+
+        if ( !profilesIds.isEmpty() || additionalProfiles != null)
         {
             if ( !StringUtils.isEmpty( arguments ) )
             {
@@ -280,30 +283,56 @@ public abstract class AbstractReleaseMojo
                 arguments = "-P ";
             }
 
-            for ( Iterator it = profiles.iterator(); it.hasNext(); )
+            for ( Iterator it = profilesIds.iterator(); it.hasNext(); )
             {
-                Profile profile = (Profile) it.next();
-
-                arguments += profile.getId();
+                arguments += (String) it.next();
                 if ( it.hasNext() )
                 {
                     arguments += ",";
                 }
             }
 
-            String additionalProfiles = getAdditionalProfiles();
             if ( additionalProfiles != null )
             {
-                if ( !profiles.isEmpty() )
+                if ( !profilesIds.isEmpty() )
                 {
                     arguments += ",";
                 }
                 arguments += additionalProfiles;
             }
         }
+
         descriptor.setAdditionalArguments( arguments );
 
         return descriptor;
+    }
+
+    /**
+     * Collects all active profile from the current and it's parent poms.
+     *
+     * @return profiles to be enabled
+     */
+    private List collectProfiles()
+    {
+        List profiles = new ArrayList();
+        MavenProject current = project;
+        while ( current != null )
+        {
+            List currentProfiles = current.getActiveProfiles();
+            if ( currentProfiles != null )
+            {
+                for ( Iterator it = currentProfiles.iterator(); it.hasNext(); )
+                {
+                    String id = ( (Profile) it.next() ).getId();
+                    if ( !profiles.contains( id ) )
+                    {
+                        profiles.add( id );
+                    }
+                }
+            }
+            current = current.getParent();
+        }
+        return profiles;
     }
 
     /**
@@ -311,6 +340,7 @@ public abstract class AbstractReleaseMojo
      *
      * @return additional profiles to enable during release
      */
+
     protected String getAdditionalProfiles()
     {
         return null;

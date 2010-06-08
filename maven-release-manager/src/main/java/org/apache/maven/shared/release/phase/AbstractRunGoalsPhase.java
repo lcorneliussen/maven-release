@@ -68,7 +68,7 @@ public abstract class AbstractRunGoalsPhase
             String goals = getGoals( releaseDescriptor );
             if ( !StringUtils.isEmpty( goals ) )
             {
-                logInfo( result, "Executing goals '" + goals + "'..." );
+                logInfo( result, "Executing goals '" + goals + "' with arguments '" + additionalArguments +"' ..." );
 
                 MavenExecutor mavenExecutor =
                     (MavenExecutor) mavenExecutors.get( releaseEnvironment.getMavenExecutorId() );
