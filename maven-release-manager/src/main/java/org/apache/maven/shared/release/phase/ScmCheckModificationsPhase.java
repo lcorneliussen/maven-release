@@ -71,9 +71,6 @@ public class ScmCheckModificationsPhase
         throws ReleaseExecutionException, ReleaseFailureException
     {
         ReleaseResult relResult = new ReleaseResult();
-        List additionalExcludes = releaseDescriptor.getCheckModificationExcludes();
-
-
                 
         logInfo( relResult, "Verifying that there are no local modifications..." );
 
